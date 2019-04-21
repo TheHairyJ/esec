@@ -8,8 +8,6 @@
 	- Answer here.
 3. Bob has just produced a key pair, in a Base-64 format, and now wants to send this to Alice. What advice would you give him on sending the key pair to Alice?
 	- Answer here.
-4. Bob sends an encrypted message to Alice, and also sends his digital certificate to Alice to prove his identity. How does Alice prove that it is Bob who sent the message?
-	- Answer here.
 
 ## Tunnelling
 *You must understanding how to analyse network traces for tunnels*
