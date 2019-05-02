@@ -1,7 +1,7 @@
 # eSecurity Open Book Exam #2
 
 ## Table of Contents
- 1. Digital Certificates
+ 1. [Digital Certificates](https://github.com/TheHairyJ/esec/blob/master/esecurity.md#digital-certificates)
 
 ## Digital Certificates
 ### Learning Outlines
